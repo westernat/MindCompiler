@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "lib": [
+            "ES6",
+            "ES2016"
+        ],
+        "typeRoots": [
+            "./cell/Mindustry.ts"
+        ],
+        "target": "ES2016"
+    }
+}
