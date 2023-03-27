@@ -1,4 +1,9 @@
-import { MindFunc } from "./cell/Mindustry";
+function F(x, y) {
+  for(i = 0; i < -x; i += 1) {
+    y += 1
+  }
+  print(y)
+  printflush()
+}
 
-MindFunc.print(1)
-MindFunc.printflush()
+F(-5, -(5))
