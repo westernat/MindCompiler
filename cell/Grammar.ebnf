@@ -1,72 +1,7 @@
-(*
-
-node                                                     ->       SOURCE.
-  |-block
-  |   |-statement
-  |       |-expression                                   ->       comparison, expression, ε.
-  |       |   |-lambda_def                               ->       identifier, parameters, block
-  |       |   |-primary
-  |       |   |   |-atom                                 ->       expression, ε.
-  |       |   |   |   |-number                           ->       FINAL.
-  |       |   |   |   |-identifier                       ->       FINAL.
-  |       |   |   |   |-string                           ->       FINAL.
-  |       |   |   |   |-boolean                          ->       FINAL.
-  |       |   |   |   |-array                            ->       expression
-  |       |   |   |   |-object
-  |       |   |   |   |   |-kvpair
-  |       |   |   |   |       |-object_key               ->       identifier, string
-  |       |   |   |   |       |-object_value             ->       expression
-  |       |   |   |   |           |-method               ->       identifier, parameters, block
-  |       |   |   |   |-call                             ->       expression, parameters
-  |       |   |   |-attribute_def                        ->       primary, identifier
-  |       |   |   |-subscription                         ->       expression
-  |       |   |   |-slicing                              ->       expression
-  |       |   |-comparison                               ->       expression
-  |       |       |-disjunction                          ->       disjunction
-  |       |           |-conjunction
-  |       |               |-inversion                    ->       inversion
-  |       |                   |-compare_op
-  |       |                       |-equal_op             ->       bitwise_or
-  |       |                       |-strictEqual_op       ->       bitwise_or
-  |       |                       |-notEqual_op          ->       bitwise_or
-  |       |                       |-strictNotEq_op       ->       bitwise_or
-  |       |                       |-lessThan_op          ->       bitwise_or
-  |       |                       |-lessThanEq_op        ->       bitwise_or
-  |       |                       |-greaterThan_op       ->       bitwise_or
-  |       |                       |-greaterThanEq_op     ->       bitwise_or
-  |       |-simple_stmt
-  |       |   |-assignment                               ->       identifier, expression, subscription
-  |       |   |   |-augassign                            ->       FINAL.
-  |       |   |-spread                                   ->       expression
-  |       |   |-return_stmt                              ->       expression, FINAL.
-  |       |   |-import_stmt                              ->       identifier, string
-  |       |   |-throw_stmt                               ->       expression, FINAL.
-  |       |   |-delete_stmt                              ->       expression
-  |       |   |-yield_stmt                               ->       expression
-  |       |   |-'break'                                  ->       FINAL.
-  |       |   |-'continue'                               ->       FINAL.
-  |       |-compound_stmt
-  |       |   |-function_def                             ->       identifier, parameters, block
-  |       |   |-if_stmt                                  ->       comparison, block
-  |       |   |   |-elif_stmt                            ->       comparison, block, elif_stmt, else_block
-  |       |   |   |-else_block                           ->       block
-  |       |   |-class_def                                ->       identifier
-  |       |   |-for_stmt                                 ->       assignment, comparison, expression, block
-  |       |   |-while_stmt                               ->       comparison, block
-  |       |   |-switch_stmt                              ->       expression, statement
-
-parameters -> identifier
-
-bitwise_or -> bitwise_xor -> bitwise_and -> shift_expr -> sum -> term -> factor -> power -> primary
-
-*)
-
 block =
     | '{', statement, '}'
+    | statement
 ;
-
-newline = ? 新一行 ?;
-
 statement =
     | statement, (newline, statement)*
     | expression
@@ -74,79 +9,65 @@ statement =
     | compound_stmt
     | newline
 ;
-
 expression =
-    | '-', expression
-    | primary
-    | comparison, '?' expression, ':', expression
-    | expression, '??', expression
-    | lambda_def
+    | ternaryOp
+    | merge
+    | lambda_def    √
+    | binaryOp      √
+    | attribute_ref √
 ;
+merge = expression, '??', expression;
+
+ternaryOp = binaryOp, '?' expression, ':', expression;
 
 lambda_def =
-    | identifier, '=>', block
-    | '(', [parameters], ')', '=>', block
-    | 'function', '(', [parameters], ')', block
+    | identity, '=>', block
+    | '(', [arguments], ')', '=>', block
+    | 'function', '(', [arguments], ')', block
 ;
-
 primary =
     | atom
-    | attribute_ref
     | subscription
     | slicing
 ;
-
 atom =
     | '(', expression, ')'
-    | number
-    | identifier
-    | string
-    | boolean
+    | number | identity | string | boolean
     | array
     | object
     | call
     | ε
 ;
-
 attribute_ref = primaty, '.', atom;
 
 number = ? 数字 ?;
 
-identifier = ? 标识符 ?;
+identity = ? 标识符 ?;
 
 string  =
     | "'", ? 字符 ?, "'"
     | '"', ? 字符 ?, '"'
     | '`', ? 字符 ?, '`'
 ;
-
 boolean =
     | 'true'
     | 'false'
 ;
-
 subscription = expression, '[', expression, ']';
 
 array = '[', [expression], (',', expression)*, ']';
 
 slicing = expression, '[', [expression], ',', [expression], [',', [expression]] ']';
 
-object_key =
-    | identifier
-    | string
-;
-object_value =
-    | expression
-    | method
-;
-kvpair = object_key, ':', object_value;
+object_key = identity | string;
+kvpair = object_key, ':', expression;
 object = '{', [kvpair], (',', kvpair)*, '}';
-
-method = identifier, '(', [parameters], ')', block;
 
 call = expression, '(', [parameters], ')';
 
-parameters = identifier, (',', identifier)*;
+parameters = expression, (',', expression)*;
+
+arguments = identity, (',', identity)*;
 
 
 
@@ -155,9 +76,7 @@ simple_stmt =
     | spread 
     | return_stmt
     | import_stmt
-    | throw_stmt
     | delete_stmt
-    | yield_stmt
     | 'break'
     | 'continue'
 ;
@@ -173,11 +92,11 @@ compound_stmt =
 
 
 assignment =
-    | ('var' | 'let' | 'const'), identifier, ('=', identifier)*, '=', expression
-    | ('var' | 'let' | 'const'), identifier, '=', expression, (',', identifier, '=', expression)*
-    | ('var' | 'let'), identifier, (',', identifier)*
-    | identifier, ('=', identifier)*, '=', expression
-    | identifier, augassign, expression
+    | ('var' | 'let' | 'const'), identity, ('=', identity)*, '=', expression
+    | ('var' | 'let' | 'const'), identity, '=', expression, (',', identity, '=', expression)*
+    | ('var' | 'let'), identity, (',', identity)*
+    | identity, ('=', identity)*, '=', expression
+    | identity, augassign, expression
     | subscription, '=', expression
 ;
 augassign =
@@ -194,60 +113,48 @@ augassign =
     | '>>='
     | '**='
 ;
-
 spread = '...', expression;
 
 return_stmt =
     | 'return', expression
     | 'return'
 ;
-
 import_stmt =
     | 'import', '*', 'as', Identifier, 'from', string
-    | 'import', '{', identifier, (',', identifier)*, '}', 'from', string
+    | 'import', '{', identity, (',', identity)*, '}', 'from', string
     | 'import', string
 ;
-
-throw_stmt =
-    | 'throw', expression
-    | 'throw'
-;
-
 delete_stmt = 'delete', expression;
 
-yield_stmt = 'yield', expression;
 
 
+function_def = 'function', identity, '(', [arguments], ')', block;
 
-function_def =
-    | 'function', identifier, '(', [parameters], ')', block
-    | 'async', 'function', identifier, '(', [parameters] ')', block
-;
 if_stmt =
-    | 'if' comparison, block, elif_stmt
-    | 'if' comparison, block, [else_block]
+    | 'if' binaryOp, block, elif_stmt
+    | 'if' binaryOp, block, [else_block]
 ;
 elif_stmt =
-    | 'else', 'if', comparison, block, elif_stmt
-    | 'else', 'if', comparison, block, [else_block]
+    | 'else', 'if', binaryOp, block, elif_stmt
+    | 'else', 'if', binaryOp, block, [else_block]
 ;
-else_block =
-    | 'else', block
-;
-class_def = 'class', identifier, ['extends', identifier], block;
+else_block = 'else', block;
+
+class_def = 'class', identity, ['extends', identity], block;
+
 for_stmt =
-    | 'for', '(', [assignment], (',', assignment)*, ';', [comparison], (',', comparison)*, ';', [expression], (',', expression)*, ')', block
+    | 'for', '(', [assignment], (',', assignment)*, ';', [binaryOp], (',', binaryOp)*, ';', [expression], (',', expression)*, ')', block
     | 'for', '(', assignment, ('in' | 'of'), expression, block
 ;
 while_stmt =
-    | 'while', '(', comparison, ')', block
-    | 'do', block, 'while', '(', comparison, ')', block
+    | 'while', '(', binaryOp, ')', block
+    | 'do', block, 'while', '(', binaryOp, ')', block
 ;
 switch_stmt = 'switch', '(', expression, ')', '{', ('case', expression, ':', [statement], ['break'])*, ['default', ':', [statement], ['break']], '}';
 
 
 
-comparison =
+binaryOp =
     | expression
     | disjunction
 ;
