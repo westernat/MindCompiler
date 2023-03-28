@@ -64,12 +64,10 @@ def p_attr(input: str):
 
 
 def p_argus():
-    ret = []
-    if id1 := p_attr('Identity'):
-        ret.append(id1)
-    while p_match(',') and (id2 := p_attr('Identity')):
-        ret.append(id2)
-    return ret
+    ret = [p_attr('Identity')]
+    while p_match(','):
+        ret.append(p_attr('Identity'))
+    return list(_ for _ in ret if _ != None)
 
 
 def p_paras(env: Env):
@@ -84,11 +82,12 @@ def p_string():
     this = tokens[index]
     if 'Str' in this['attr']:
         index += 1
-        if this['attr'][0] == 'S':
-            return '"'+this['value'][1:-1]+'"'
-        if this['attr'][0] == 'F':
+        if this['attr'] == 'SingleStrEnd':
+            this['value'] = '"'+this['value'][1:-1]+'"'
+            return this
+        if this['attr'] == 'FormatStrEnd':
             raise TypeError("暂不支持``字符串")
-        return this['value']
+        return this
     return
 
 
@@ -118,7 +117,7 @@ def p_atom(env: Env):
         if p_match(']'):
             return ['array', paras]
         raise SyntaxError("缺少']'")
-    # onject
+    # object
     if p_match('{'):
         kvpairs = [p_kvpair(env)]
         while p_match(',') and (kv := p_kvpair(env)):
@@ -131,16 +130,25 @@ def p_atom(env: Env):
 
 def p_kvpair(env: Env):
     global index
+    c = index
     if p_next(':'):
         if key := (p_attr('Identity') or p_string()):
             index += 1
-            if value := p_stmt(env):
+            if value := p_exp(env):
                 return [key, value]
+        raise SyntaxError("键值对错误")
+    if (id1 := p_attr('Identity')) and p_match('('):
+        argus = p_argus()
+        if p_match(')') and (bk := Block(env)):
+            return ['function', id1, argus, bk]
+    index = c
     return
 
 
 def p_primary(env: Env):
     return p_atom(env)
+    # p_subscription(env)
+    # slicing(env)
 
 
 def p_power(env: Env):
@@ -216,15 +224,41 @@ def p_attrRef(env: Env):
     return
 
 
+def p_lambda(env: Env):
+    global index
+    c = index
+    if p_match('function') and p_match('('):
+        argus = p_argus()
+        if p_match(')') and (bk := Block(env)):
+            return ['lambda', argus, bk]
+        raise SyntaxError("不符合'lambda'函数的语法")
+    if p_match('('):
+        argus = p_argus()
+        if p_match(')') and p_match('=>'):
+            if bk := Block(env):
+                return ['lambda', argus, bk]
+            raise SyntaxError("'=>'后缺少语句块")
+    index = c
+    if p_next('=>'):
+        if id1 := p_attr('Identity'):
+            index += 1
+            if bk := Block(env):
+                return ['lambda', id1, bk]
+            raise SyntaxError("'=>'后缺少语句块")
+        raise SyntaxError("'=>'前不是标识符")
+    return
+
+
 def p_exp(env: Env):
-    return p_attrRef(env) or p_binaryOp(env)
+    return p_lambda(env) or p_attrRef(env) or p_binaryOp(env)
 
 
 def p_assign(env: Env):
-    global index
+    global index, func
     c = index
     if p_match('let'):
         if (id1 := p_attr('Identity')) and p_match('='):
+            func = f"{id1['value']}@{env.label}"
             if stmt := p_stmt(env):
                 return ['assign', id1, stmt]
         raise SyntaxError("你要'let'什么")
@@ -243,7 +277,7 @@ def p_assign(env: Env):
 
 def p_return(env: Env):
     if p_match('return'):
-        return ['return', p_exp(env)]
+        return ['return', func, p_exp(env)]
     return
 
 
@@ -272,9 +306,11 @@ def p_symStmt(env: Env):
 
 
 def p_func(env: Env):
+    global func
     if p_match('function'):
         if (id1 := p_attr('Identity')) and p_match('('):
             argus = p_argus()
+            func = f"{id1['value']}@{env.label}"
             if p_match(')') and (bk := Block(env)):
                 return ['function', id1, argus, bk]
         raise SyntaxError("不符合'function'语法")

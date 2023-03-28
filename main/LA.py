@@ -98,7 +98,7 @@ WORDS = {
 
 def l_stringCheck(word: str, lattr: str, lineTokens: list[dict[str, str]]):
     if word in '`"\'':
-        for char, attr in zip('`"\'', ('FomatStr', 'DoubleStr', 'SingleStr')):
+        for char, attr in zip('`"\'', ('FormatStr', 'DoubleStr', 'SingleStr')):
             if word == char:
                 if lattr == attr:
                     # 如果是闭合符
@@ -155,6 +155,8 @@ def lexicalAnalyzer(input: str):
             elif char in '?<>&|' and lchar == char:
                 words[-2] += char
             elif char in '+-' and lchar == char:
+                words[-2] += char
+            elif char == '>' and lchar == '=':
                 words[-2] += char
             else:
                 words.extend([char, ''])

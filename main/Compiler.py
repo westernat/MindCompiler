@@ -6,7 +6,7 @@ import os
 
 start = time()
 if len(sys.argv) == 1:
-    sematicAnalyzer(os.getcwd()+r'\test.js', sys.argv[0])
+    sematicAnalyzer(os.getcwd()+r'\test.js')
 else:
-    sematicAnalyzer(sys.argv[1], sys.argv[0])
+    sematicAnalyzer(sys.argv[1])
 print('\n程序用时', time()-start, 's')
