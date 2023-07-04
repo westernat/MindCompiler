@@ -76,6 +76,7 @@ simple_stmt =
     | spread 
     | return_stmt
     | import_stmt
+    | export_stmt
     | delete_stmt
     | 'break'
     | 'continue'
@@ -122,8 +123,9 @@ return_stmt =
 import_stmt =
     | 'import', '*', 'as', Identifier, 'from', string
     | 'import', '{', identity, (',', identity)*, '}', 'from', string
-    | 'import', string
 ;
+export_stmt = 'export', '{', identity, (',', identity)*, '}';
+
 delete_stmt = 'delete', expression;
 
 

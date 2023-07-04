@@ -10,7 +10,7 @@ PROJECT_ROOT = path.split(path.split(__file__)[0])[0]
 if __name__ == '__main__':
     start = time()
     if len(argv) == 1:
-        sematicAnalyzer(path.join(PROJECT_ROOT, 'test.js'))
+        sematicAnalyzer(path.join(PROJECT_ROOT, './test/main.js'))
     else:
         sematicAnalyzer(argv[1])
     stop = time()

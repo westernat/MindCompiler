@@ -3,6 +3,7 @@ import re
 
 WORDS = {
     "import": "Keyword",
+    "export": "Keyword",
     "as": "Keyword",
     "from": "Keyword",
     "let": "Keyword",
@@ -96,14 +97,18 @@ WORDS = {
 }
 
 
-def l_stringCheck(word: str, lattr: str, lineTokens: list[dict[str, str]]):
+def l_stringCheck(word: str, lattr: str, lineTokens: list[dict], row: int, column: int):
     if word in '`"\'':
         for char, attr in zip('`"\'', ('FormatStr', 'DoubleStr', 'SingleStr')):
             if word == char:
                 if lattr == attr:
                     # 如果是闭合符
-                    lineTokens[-1]['attr'] = attr + 'End'
-                    lineTokens[-1]['value'] += word
+                    lineTokens[-1] = {
+                        'attr': attr + 'End',
+                        'value': lineTokens[-1]['value']+word,
+                        'row': row,
+                        'column': column
+                    }
                 else:
                     # 否则是开始符
                     lineTokens.append({'attr': attr, 'value': word})
@@ -176,7 +181,8 @@ def lexicalAnalyzer(input: str):
     for index in range(len(words)):
         word = words[index]
         literal: str = word['literal']
-        lineTokens = l_stringCheck(literal, lineTokens[-1]['attr'], lineTokens)
+        lineTokens = l_stringCheck(
+            literal, lineTokens[-1]['attr'], lineTokens, row, column)
         if lineTokens[-1]['attr'].endswith('Str'):
             continue
         elif literal in '`"\'' or literal.isspace():

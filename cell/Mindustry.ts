@@ -1,13 +1,88 @@
 //#Typescript
 
-declare class Block {
+declare class Object {
+    /**指向当前对象自己 */
     readonly $this: this
-    readonly $thisx: number
-    readonly $thisy: number
-    readonly $rotation: number
-    readonly $size: number
-    bind(name: string): this
+    /**获取当前对象自己的X坐标 */
+    readonly $thisx: Number
+    /**获取当前对象自己的Y坐标 */
+    readonly $thisy: Number
+    /**获取这个建筑物/单位内的所有物品的总计数量 */
+    readonly $totalItems: Number
+    /**获取这个建筑物/单位内的所有液体的总计数量 */
+    readonly $totalLiquid: Number
+    /**获取这个建筑物/单位内总电力 */
+    readonly $totalPower: Number
+    /**获取这个建筑物/单位内的物品的容量 */
+    readonly $itemCapacity: Number
+    /**获取这个建筑物/单位内的液体的容量 */
+    readonly $liquidCapacity: Number
+    /**获取这个建筑物/单位内的电力的容量 */
+    readonly powerCapacity: Number
+    /**获取这个建筑物/单位内的电力网络的储存量 */
+    readonly $powerNetStored: Number
+    /**获取这个建筑物/单位内的电力网络的储存量容量 */
+    readonly $powerNetCapacity: Number
+    /**获取这个建筑物/单位内的电力网络输入量/产生量 */
+    readonly $powerNetIn: Number
+    /**获取这个建筑物/单位内的电力网络输出量/消耗量 */
+    readonly $powerNetOut: Number
+    /**获取这个建筑物/单位内的子弹量 */
+    readonly $ammo: Number
+    /**获取这个建筑物/单位内的子弹量上限 */
+    readonly $ammoCapacity: Number
+    /**获取这个建筑物/单位的生命值 */
+    readonly $health: Number
+    /**获取这个建筑物/单位的生命值上限 */
+    readonly $maxHealth: Number
+    /**获取这个建筑物/单位的发热 */
+    readonly $heat: Number
+    /**获取这个建筑物/单位的效率 */
+    readonly $efficiency: Number
+    /**获取这个建筑物/单位的时间流速 */
+    readonly $timescale: Number
+    /**获取这个炮塔/单位的旋转角度,建筑物则获取朝向(0为沿建筑物x轴方向,逆时针) */
+    readonly $rotation: Number
+    /**获取这个建筑物/单位的x坐标 */
+    readonly $x: Number
+    /**获取这个建筑物/单位的y坐标 */
+    readonly $y: Number
+    /**获取这个建筑物/单位的射击x坐标 */
+    readonly $shootX: Number
+    /**获取这个建筑物/单位的射击y坐标 */
+    readonly $shootY: Number
+    /**获取这个建筑物/单位的大小(正方形边长大小) */
+    readonly $size: Number
+    /**获取这个建筑物/单位是否失效(被摧毁返回1 有效返回0) */
+    readonly $dead: boolean
+    /**获取这个建筑物/单位的攻击范围 */
+    readonly $range: Number
+    /**获取这个建筑物/单位的攻击状态(开火返回1 停火返回0) */
+    readonly $shooting: boolean
+    /**获取这个建筑物/单位的开启状态 */
+    readonly $enabled: boolean
+    /**获取这个建筑物的配置(常用于分类器) */
+    readonly $configure: any
+    /**获取这个建筑物/单位的阵营 */
+    readonly $team: Number
+    /**返回这个建筑物/单位的类型 */
+    readonly $type: Number
+    /**返回这个建筑物/单位的数字标记 */
+    readonly $flag: Number
+    /**返回这个建筑物/单位是否被控制(处理器返回1 玩家返回2 编队返回3 如果都不是返回0) */
+    readonly $controlled: Number
+
+    constructor(rowId: string)
+    /**
+     * 
+     * @param flag 绑定的方块编号
+     * @returns 所绑定的方块
+     */
+    bind(flag: Number): this
+    getRowId(): string
 }
+
+declare class Block extends Object { }
 
 // compaign
 declare class Accelerator extends Block { }
@@ -78,13 +153,37 @@ declare class LiquidRouter extends LiquidBlock { }
 // logic
 declare class CanvasBlock extends Block { }
 declare class LogicBlock extends Block {
-    $counter: number
-    $ipt: number
+    /**自游戏启动起所经过的时间 */
+    readonly $time: Number
+    /**绑定方块数 */
+    readonly $links: Number
+    /**逻辑执行行数 */
+    $counter: Number
+    /**当前绑定单位 */
+    readonly $unit: Unit
+    /**每tick执行行数 */
+    readonly $ipt: Number
+    /**返回被标记单位控制者名字 */
+    readonly $name: string
 }
 declare class LogicDisplay extends Block { }
 declare class MemoryBlock extends Block { }
 declare class MessageBlock extends Block {
-    print(msg: string | number | boolean): void
+    /**
+     * 打印缓存
+     */
+    readonly flush: string
+    /**
+     * 
+     * @param msg 需要打印的对象
+     * 
+     * 把msg存于缓存
+     */
+    print(msg: any): void
+    /**
+     * 打印缓存
+     */
+    printflush(): void
 }
 declare class SwitchBlock extends Block { }
 
@@ -259,6 +358,28 @@ declare const MindBlocks: {
     //campaign
     launchPad: LaunchPad, interplanetaryAccelerator: Accelerator
 }
+
+declare class Unit extends Object {
+    /**获取这个单位的飞行状态 */
+    readonly $boosting: any
+    /**获取这个单位的挖矿x坐标 */
+    readonly $mineX: Number
+    /**获取这个单位的挖矿y坐标 */
+    readonly $mineY: Number
+    /**获取这个单位的挖矿状态 */
+    readonly $mining: Number
+    /**获取这个单位的配置(如工厂生产的物品) */
+    readonly $config: any
+    /**获取单位的载荷数量 */
+    readonly $payloadCount: Number
+    /**获取单位的载荷类型 */
+    readonly $payloadType: any
+    /**返回一个单位的控制者(如果是处理器返回processor 编队返回 leader 如果都不是返回 itself) */
+    readonly $controller: any
+}
+
+//#region functions
+
 /**从连接的内存读取数字 */
 declare function read(result: string | number, from: MemoryBlock, at: number): void
 /**向连接的内存写入数字 */
@@ -405,61 +526,8 @@ declare function ulocate(find: "spawn", outX: string, outY: string, found: strin
 declare function ulocate(find: "damaged", outX: string, outY: string, found: string, building: string): void
 
 const MindFunc = { read, write, draw, print, drawflush, printflush, getlink, control, radar, sensor, lookup, packcolor, wait, stop, ubind, ucontrol, uradar, ulocate }
-/**其中内容来自 https://www.mindustry-logic.xyz/ */
-enum MindObject {
-    /**自游戏启动起所经过的时间 */$time,
-    /**指向当前对象自己 */$this,
-    /**获取当前对象自己的X坐标 */thisx,
-    /**获取当前对象自己的Y坐标 */$thisy,
-    /**空气 */$air,
-    /**不可通过墙 */$solid,
-    /**绑定方块数 */$links,
-    /**逻辑执行行数 */$counter,
-    /**当前绑定单位 */$unit,
-    /**每tick执行行数 */$ipt,
-    /**获取这个建筑物/单位内的所有物品的总计数量 */$totalItems,
-    /**获取这个建筑物/单位内的所有液体的总计数量 */$totalLiquid,
-    /**获取这个建筑物/单位内总电力 */$totalPower,
-    /**获取这个建筑物/单位内的物品的容量 */$itemCapacity,
-    /**获取这个建筑物/单位内的液体的容量 */$liquidCapacity,
-    /**获取这个建筑物/单位内的电力的容量 */powerCapacity,
-    /**获取这个建筑物/单位内的电力网络的储存量 */$powerNetStored,
-    /**获取这个建筑物/单位内的电力网络的储存量容量 */$powerNetCapacity,
-    /**获取这个建筑物/单位内的电力网络输入量/产生量 */$powerNetIn,
-    /**获取这个建筑物/单位内的电力网络输出量/消耗量 */$powerNetOut,
-    /**获取这个建筑物/单位内的子弹量 */$ammo,
-    /**获取这个建筑物/单位内的子弹量上限 */$ammoCapacity,
-    /**获取这个建筑物/单位的生命值 */$health,
-    /**获取这个建筑物/单位的生命值上限 */$maxHealth,
-    /**获取这个建筑物/单位的发热 */$heat,
-    /**获取这个建筑物/单位的效率 */$efficiency,
-    /**获取这个建筑物/单位的时间流速 */$timescale,
-    /**获取这个炮塔/单位的旋转角度,建筑物则获取朝向(0为沿建筑物x轴方向,逆时针) */$rotation,
-    /**获取这个建筑物/单位的x坐标 */$x,
-    /**获取这个建筑物/单位的y坐标 */$y,
-    /**获取这个建筑物/单位的射击x坐标 */$shootX,
-    /**获取这个建筑物/单位的射击y坐标 */$shootY,
-    /**获取这个建筑物/单位的大小(正方形边长大小) */$size,
-    /**获取这个建筑物/单位是否失效(被摧毁返回1 有效返回0) */$dead,
-    /**获取这个建筑物/单位的攻击范围 */$range,
-    /**获取这个建筑物/单位的攻击状态(开火返回1 停火返回0) */$shooting,
-    /**获取这个单位的飞行状态 */$boosting,
-    /**获取这个单位的挖矿x坐标 */$mineX,
-    /**获取这个单位的挖矿y坐标 */$mineY,
-    /**获取这个单位的挖矿状态 */$mining,
-    /**获取这个建筑物/单位的阵营 */$team,
-    /**返回这个建筑物/单位的类型 */$type,
-    /**返回这个建筑物/单位的数字标记 */$flag,
-    /**返回这个建筑物/单位是否被控制(处理器返回1 玩家返回2 编队返回3 如果都不是返回0) */$controlled,
-    /**返回一个单位的控制者(如果是处理器返回processor 编队返回 leader 如果都不是返回 itself) */$controller,
-    /**不建议使用 将被移除 使用controlled替代它 */$commanded,
-    /**返回被标记单位控制者名字 */$name,
-    /**获取这个单位的配置(如工厂生产的物品) */$config,
-    /**获取单位的载荷数量 */$payloadCount,
-    /**获取单位的载荷类型 */$payloadType,
-    /**获取这个建筑物/单位的开启状态 */$enabled,
-    /**获取这个建筑物的配置(常用于分类器) */$configure
-}
+
+//#endregion
 
 
-export { MindBlocks, MindFunc, MindObject }
+export { MindBlocks, MindFunc }

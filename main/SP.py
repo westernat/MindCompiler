@@ -14,6 +14,7 @@ def p_labelGener():
 
 
 LG = p_labelGener()
+funcQueue: list[str] = []
 
 
 class Env:
@@ -37,8 +38,6 @@ class Env:
 
 
 index = 0
-TOP = Env(None)
-AST = [TOP]
 
 
 def p_match(input: str):
@@ -260,13 +259,13 @@ def p_exp(env: Env):
 
 
 def p_assign(env: Env):
-    global index, func
+    global index
     c = index
     if p_match('let'):
         if (id1 := p_attr('Identity')) and p_match('='):
-            func = f"{id1['value']}@{env.label}"
-            if stmt := p_stmt(env):
-                return ['assign', id1, stmt]
+            funcQueue.append(f"{id1['value']}@{env.label}")
+            if lbd := p_lambda(env):
+                return ['assign', id1, lbd]
         raise SyntaxError("你要'let'什么" + error(index))
     if (id1 := p_attr('Identity')) and p_match('='):
         if stmt := p_stmt(env):
@@ -283,40 +282,47 @@ def p_assign(env: Env):
 
 def p_return(env: Env):
     if p_match('return'):
-        return ['return', func, p_exp(env)]
+        if len(funcQueue) > 0:
+            return ['return', funcQueue.pop(), p_exp(env)]
+        return ['return', None, p_exp(env)]
     return
 
 
 def p_import():
-    global index
-    c = index
     if p_match('import'):
         if p_match('{'):
             argus = p_argus()
             if p_match('}') and p_match('from') and (where := p_string()):
                 return ['import', argus, where]
-            raise SyntaxError("不符合'import'语法" + error(index))
-        if (id1 := p_attr('Identity')) and p_match('from') and (where := p_string()):
-            return ['import', id1, where]
-        index = c
         if p_match('*') and p_match('as') and (id1 := p_attr('Identity')) and \
                 p_match('from') and (where := p_string()):
-            return ['import', '*', id1, where]
+            return ['import *', id1, where]
+        raise SyntaxError("不符合'import'语法" + error(index))
+    return
+
+
+def p_export():
+    if p_match('export'):
+        if p_match('{'):
+            argus = p_argus()
+            if p_match('}'):
+                return ['export', argus]
+        raise SyntaxError("不符合'export'语法" + error(index))
     return
 
 
 def p_symStmt(env: Env):
     return p_assign(env) or \
         p_return(env) or \
-        p_import()
+        p_import() or \
+        p_export()
 
 
 def p_func(env: Env):
-    global func
     if p_match('function'):
         if (id1 := p_attr('Identity')) and p_match('('):
             argus = p_argus()
-            func = f"{id1['value']}@{env.label}"
+            funcQueue.append(f"{id1['value']}@{env.label}")
             if p_match(')') and (bk := Block(env)):
                 return ['function', id1, argus, bk]
         raise SyntaxError("不符合'function'语法" + error(index))
@@ -424,8 +430,6 @@ class Block:
             neo = Env(env)
             stmts.append(neo)
             while stmt := p_stmt(neo):
-                if isinstance(stmt, dict):
-                    raise SyntaxError("该语句似乎没有任何作用?" + error(index))
                 stmts.append(stmt)
                 p_match(';')
             if p_match('}'):
@@ -436,11 +440,13 @@ class Block:
         raise SyntaxError("未匹配任何有效语法" + error(index))
 
 
-def syntacticParser(path: str):
-    global tokens
+def syntacticParser(path: str, top: Env):
+    global tokens, index
+    index = 0
+    AST = [top]
     with open(path, encoding='utf-8') as Js:
         tokens = lexicalAnalyzer(Js.read())
     while index < len(tokens):
-        AST.extend(Block(TOP))
+        AST.extend(Block(top))
         p_match(';')
     return AST

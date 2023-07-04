@@ -1,6 +1,10 @@
 from SP import Env, syntacticParser
 from LB import *
 from pprint import pprint
+from sys import argv
+from os import path
+
+DEBUG = False
 
 
 def a_labelGener():
@@ -13,6 +17,7 @@ def a_labelGener():
 LG = a_labelGener()
 blocks = []
 funcs = {}
+imports = {}
 
 
 def a_block(stmts: list, toSave: list, th=0):
@@ -35,8 +40,10 @@ def a_stmts(env: Env, ls: list, toSave: list, th: int):
                 a_if(env, stmt, toSave, th+len(toSave))
             case 'while':
                 a_while(env, stmt, toSave, th+len(toSave))
-            case 'import':
+            case 'import' | 'import *':
                 a_import(env, stmt, toSave)
+            case 'export':
+                a_export(env, stmt, toSave)
             case 'return':
                 a_return(env, stmt, toSave)
             case 'call':
@@ -112,17 +119,20 @@ def a_call(env: Env, ls: list, toSave: list):
         toSave.append(eval(f'm_{ID}{paras}'))
         return ID
     else:
-        if env.get(ID):
-            neoLabel = f"{ID}@{env.label}"
-            func = funcs[neoLabel]
-            for argu, para in zip(func['argus'], ls[2]):
-                label = a_exp(env, para, toSave, argu)
-                toSave.append(f'set {argu} {label}')
-            toSave.append(f'set {neoLabel}:bak {len(toSave)+2}')
-            toSave.append(f"set @counter {func['pos']}")
-            return neoLabel+':ret'
+        neoLabel: str
+        if env_label := env.get(ID):
+            neoLabel = f"{ID}@{env_label}"
+        elif ID in imports:
+            neoLabel = f"{ID}@{imports[ID]}"
         else:
             raise NameError(f"函数名'{ID}'未定义")
+        func = funcs[neoLabel]
+        for argu, para in zip(func['argus'], ls[2]):
+            label = a_exp(env, para, toSave, argu)
+            toSave.append(f'set {argu} {label}')
+        toSave.append(f'set {neoLabel}:bak {len(toSave)+2}')
+        toSave.append(f"set @counter {func['pos']}")
+        return f"{neoLabel}:ret"
 
 
 def a_func(env: Env, ls: list, toSave: list, th: int):
@@ -210,11 +220,39 @@ def a_while(env: Env, ls: list, toSave: list, th: int):
 
 
 def a_import(env: Env, ls: list, toSave: list):
-    print('暂不支持该功能')
+    where: dict[str, str] = ls[2]
+    literal = where['value']
+    if (literal[-4:-1] == '.ts'):
+        return
+    if (literal[-4:-1] != ".js"):
+        raise ImportError(f"不允许的格式, 错误位于 row: {where['row']}, column: {where['column']}")
+    moduleName = path.split(literal[1:-1])[1]
+    modulePath = path.join(path.join(path.split(path.split(__file__)[0])[0], 'test/') if len(argv) == 1 else path.split(argv[1])[0], moduleName)
+    module_ast = syntacticParser(modulePath, Env(moduleName))
+    a_block(module_ast, toSave)
+    module_env = module_ast[0]
+    if (ls[0] == 'import'):
+        for argu in ls[1]:
+            ID = argu['value']
+            if module_env.get(ID+":export"):
+                imports[ID] = module_env.label
+    else: # == 'import *'
+        # 这个得tmd写a_attrRef()
+        pass
+    if DEBUG:
+        print(moduleName.center(20, '='))
+        pprint(module_ast)
+        print("imports".center(20, '='))
+        pprint(imports)
+
+
+def a_export(env: Env, ls: list, toSave: list):
+    for argu in ls[1]:
+        env.put(argu['value']+":export")
 
 
 def a_array(env: Env, ls: list, toSave: list, label: str):
-    print('暂不支持该功能')
+    raise InterruptedError("暂不支持'array'功能")
 
 
 def a_object(env: Env, ls: list, toSave: list, label: str):
@@ -296,14 +334,15 @@ def a_exp(env: Env, ls: list | dict, toSave: list, label='', th=0) -> str:
 
 
 def sematicAnalyzer(path: str):
-    AST = syntacticParser(path)
+    AST = syntacticParser(path, Env('main'))
     a_block(AST, blocks)
     blocks.append('stop')
-    # print('AST'.center(20, '='))
-    # pprint(AST)
+    if DEBUG:
+        print('main AST'.center(20, '='))
+        pprint(AST)
+        print('funcs'.center(20, '='))
+        pprint(funcs)
     print('blocks'.center(20, '='))
     for i in range(len(blocks)):
-        # print(f'{i}:  ', end='')
+        if DEBUG: print(f'{i}:  ', end='')
         print(blocks[i])
-    # print('funcs'.center(20, '='))
-    # pprint(funcs)
