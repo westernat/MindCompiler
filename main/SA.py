@@ -1,5 +1,5 @@
 from SP import Env, syntacticParser
-from lib import *
+from LIB import *
 from pprint import pprint
 
 
@@ -49,11 +49,11 @@ def a_assgin(env: Env, ls: list, toSave: list):
     env.put(ID)
     if isinstance(ls[2], list) and ls[2][0] == 'assign':
         id1 = a_assgin(env, ls[2], toSave)
-        toSave.append(m_set(label, id1))
+        toSave.append(m_set(Identity(label), id1))
     else:
         exp = a_exp(env, ls[2], toSave, label, len(toSave))
         if exp != label:
-            toSave.append(m_set(label, exp))
+            toSave.append(m_set(Identity(label), exp))
     return label
 
 
@@ -63,7 +63,7 @@ def a_augassin(env: Env, ls: list, toSave: list):
         label = f'{ID}@{envLabel}'
         exp = a_exp(env, ls[1:], toSave, label)
         if exp != label:
-            toSave.append(m_set(label, exp))
+            toSave.append(m_set(Identity(label), exp))
     else:
         raise NameError(f"变量名'{ID}'未定义")
 
@@ -74,7 +74,7 @@ def a_compare(env: Env, ls: list, toSave: list, goto=0, valueMode=False):
     r = a_exp(env, ls[2], toSave)
     if valueMode:
         label = next(LG)
-        toSave.append(m_operation(label, JumpMode[OP], l, r))
+        toSave.append(m_operation(Identity(label), JumpMode[OP], l, r))
         return label
     else:
         mode = JumpMode['f'+OP] if goto < 0 else JumpMode[OP]
@@ -91,9 +91,9 @@ def a_for(env: Env, ls: list, toSave: list, th: int):
     else:
         cps = (a_compare(env, cp, toSave, valueMode=True) for cp in ls[2])
         label = next(LG)
-        toSave.append(m_set(label, 'true'))
+        toSave.append(m_set(Identity(label), 'true'))
         for cp in cps:
-            toSave.append(m_operation(label, 'land', label, cp))
+            toSave.append(m_operation(Identity(label), 'land', label, cp))
         toSave.append(m_jump(th+1, '!=', label, 'false'))
     start = th+len(fir)-1
     bk = []
@@ -228,7 +228,7 @@ def a_object(env: Env, ls: list, toSave: list, label: str):
             neoLabel = f"{key}${label}"
             exp = a_exp(env, kvpair[1], toSave, neoLabel)
             if exp != neoLabel:
-                toSave.append(m_set(neoLabel, exp))
+                toSave.append(m_set(Identity(neoLabel), exp))
 
 
 def a_attrRef(env: Env, ls: list, toSave: list, label: str):
@@ -261,16 +261,17 @@ def a_exp(env: Env, ls: list | dict, toSave: list, label='', th=0) -> str:
                     return str(eval(l+ls[0]+r))
                 else:
                     toSave.append(m_operation(
-                        label, OperationMode[ls[0]], l, r))
+                        Identity(label), OperationMode[ls[0]], l, r))
             case 'factor':
                 op = ls[1]
                 r = a_exp(env, ls[2], toSave)
                 if op in '+-':
                     if r.isnumeric():
                         return eval(op+r)
-                    toSave.append(m_operation(label, 'mul', r, op+'1'))
+                    toSave.append(m_operation(
+                        Identity(label), 'mul', r, op+'1'))
                 else:
-                    toSave.append(m_operation(label, 'flip', r))
+                    toSave.append(m_operation(Identity(label), 'flip', r))
             case 'array':
                 a_array(env, ls, toSave, label)
             case 'object':

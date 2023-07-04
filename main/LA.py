@@ -120,64 +120,77 @@ def lexicalAnalyzer(input: str):
     词法分析模块
     input -> tokens
     '''
-    lineTokens: list[dict[str, str]] = [{'attr': '', 'value': ''}]
-    words = ['']
+    row = 1
+    column = 1
+    wordBase = lambda l='': {'literal': l, 'row': row, 'column': column}
+    words = [wordBase()]
     for i in range(len(input)):
         lchar = input[i-1:i]
         char = input[i:i+1]
         if char == ' ':
             if lchar == ' ':
-                words[-1] += ' '
+                words[-1]['literal'] += ' '
             else:
-                words.extend([' ', ''])
+                words.extend([wordBase(' '), wordBase()])
         elif char.isnumeric() and lchar in '+-':
-            words[-2] += char
+            words[-2]['literal'] += char
         elif char in '+-*/%<>!=()[]{},.?&|^~:;`"\'\n':
             if char == '=' and lchar in '+-*/%<>!=&|^':
-                words[-2] += '='
+                words[-2]['literal'] += '='
             elif char == '.':
                 if lchar.isnumeric():
-                    words[-1] += '.'
+                    words[-1]['literal'] += '.'
                 elif lchar in '?.':
-                    words[-2] += '.'
+                    words[-2]['literal'] += '.'
                 else:
-                    words.extend(['.', ''])
+                    words.extend([wordBase('.'), wordBase()])
             elif char == '/':
                 if lchar == '/':
-                    words = ['']
+                    words = [wordBase()]
                     break
                 elif lchar == '*':
-                    words[-2] += '/'
+                    words[-2]['literal'] += '/'
                 else:
-                    words.extend([char, ''])
+                    words.extend([wordBase(char), wordBase()])
             elif char == '*' and lchar in '/*':
-                words[-2] += '*'
+                words[-2]['literal'] += '*'
             elif char in '?<>&|' and lchar == char:
-                words[-2] += char
+                words[-2]['literal'] += char
             elif char in '+-' and lchar == char:
-                words[-2] += char
+                words[-2]['literal'] += char
             elif char == '>' and lchar == '=':
-                words[-2] += char
+                words[-2]['literal'] += char
+            elif char == '\n':
+                row += 1
+                column = 0
             else:
-                words.extend([char, ''])
+                words.extend([wordBase(char), wordBase()])
         else:
-            words[-1] += char
+            words[-1] = wordBase(words[-1]['literal'] + char)
+        column += 1
+
+    def tokenBase(a, w): return {
+        'attr': a, 'value': w['literal'], 'row': w['row'], 'column': w['column']}
+    lineTokens = [tokenBase('', wordBase())]
+    WORDKEYS = WORDS.keys()
     for index in range(len(words)):
         word = words[index]
-        lineTokens = l_stringCheck(word, lineTokens[-1]['attr'], lineTokens)
+        literal: str = word['literal']
+        lineTokens = l_stringCheck(literal, lineTokens[-1]['attr'], lineTokens)
         if lineTokens[-1]['attr'].endswith('Str'):
             continue
-        elif word in '`"\'' or word.isspace():
+        elif literal in '`"\'' or literal.isspace():
             pass
-        elif re.match('^(\-|\+)?[0-9][0-9]*(.[0-9]*)?$', word):
-            lineTokens.append({'attr': 'Number', 'value': word})
+        elif re.match('^(\-|\+)?[0-9][0-9]*(.[0-9]*)?$', literal):
+            lineTokens.append(tokenBase('Number', word))
         else:
-            word = word.strip()
-            if word in WORDS.keys():
-                if WORDS[word] == 'Error':
+            literal = literal.strip()
+            word['literal'] = literal
+            if literal in WORDKEYS:
+                if WORDS[literal] == 'Error':
                     raise InterruptedError(
-                        f"不支持该关键字: '{word}', 错误位于{words[index-1:index+2]}")
-                lineTokens.append({'attr': WORDS[word], 'value': word})
+                        f"不支持该关键字: '{literal}', 错误位于 row: {word['row']}, column: {word['column']}")
+                lineTokens.append(tokenBase(WORDS[literal], word))
             else:
-                lineTokens.append({'attr': 'Identity', 'value': word})
+                lineTokens.append(tokenBase('Identity', word))
     return lineTokens[1:]

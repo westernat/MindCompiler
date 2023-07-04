@@ -1,6 +1,11 @@
 from LA import lexicalAnalyzer
 
 
+def error(index: int):
+    token = tokens[index-1]
+    return f", 错误位于 row: {token['row']}, column: {token['column']}"
+
+
 def p_labelGener():
     counter = 0
     while True:
@@ -86,7 +91,7 @@ def p_string():
             this['value'] = '"'+this['value'][1:-1]+'"'
             return this
         if this['attr'] == 'FormatStrEnd':
-            raise TypeError("暂不支持``字符串")
+            raise TypeError("暂不支持Format字符串" + error(index))
         return this
     return
 
@@ -98,12 +103,13 @@ def p_atom(env: Env):
         exp = p_exp(env)
         if p_match(')'):
             return exp
-        raise SyntaxError("缺少')'")
+        raise SyntaxError("缺少')'" + error(index))
     # call
     if (id1 := p_attr('Identity')) and p_match('('):
         paras = p_paras(env)
         if p_match(')'):
             return ['call', id1['value'], paras]
+        raise SyntaxError("缺少')'" + error(index))
     index = c
     if or3 := (p_attr('Number') or
                p_string() or
@@ -116,7 +122,7 @@ def p_atom(env: Env):
         paras = p_paras(env)
         if p_match(']'):
             return ['array', paras]
-        raise SyntaxError("缺少']'")
+        raise SyntaxError("缺少']'" + error(index))
     # object
     if p_match('{'):
         kvpairs = [p_kvpair(env)]
@@ -124,7 +130,7 @@ def p_atom(env: Env):
             kvpairs.append(kv)
         if p_match('}'):
             return ['object', kvpairs]
-        raise SyntaxError("缺少'}'")
+        raise SyntaxError("缺少'}'" + error(index))
     return
 
 
@@ -136,7 +142,7 @@ def p_kvpair(env: Env):
             index += 1
             if value := p_exp(env):
                 return [key, value]
-        raise SyntaxError("键值对错误")
+        raise SyntaxError("键值对错误" + error(index))
     if (id1 := p_attr('Identity')) and p_match('('):
         argus = p_argus()
         if p_match(')') and (bk := Block(env)):
@@ -231,21 +237,21 @@ def p_lambda(env: Env):
         argus = p_argus()
         if p_match(')') and (bk := Block(env)):
             return ['lambda', argus, bk]
-        raise SyntaxError("不符合'lambda'函数的语法")
+        raise SyntaxError("不符合'lambda'函数的语法" + error(index))
     if p_match('('):
         argus = p_argus()
         if p_match(')') and p_match('=>'):
             if bk := Block(env):
                 return ['lambda', argus, bk]
-            raise SyntaxError("'=>'后缺少语句块")
+            raise SyntaxError("'=>'后缺少语句块" + error(index))
     index = c
     if p_next('=>'):
         if id1 := p_attr('Identity'):
             index += 1
             if bk := Block(env):
                 return ['lambda', id1, bk]
-            raise SyntaxError("'=>'后缺少语句块")
-        raise SyntaxError("'=>'前不是标识符")
+            raise SyntaxError("'=>'后缺少语句块" + error(index))
+        raise SyntaxError("'=>'前不是标识符" + error(index))
     return
 
 
@@ -261,16 +267,16 @@ def p_assign(env: Env):
             func = f"{id1['value']}@{env.label}"
             if stmt := p_stmt(env):
                 return ['assign', id1, stmt]
-        raise SyntaxError("你要'let'什么")
+        raise SyntaxError("你要'let'什么" + error(index))
     if (id1 := p_attr('Identity')) and p_match('='):
         if stmt := p_stmt(env):
             return ['assign', id1, stmt]
-        raise SyntaxError("没有值可以赋")
+        raise SyntaxError("没有值可以赋" + error(index))
     index = c
     if (id1 := p_attr('Identity')) and (op := p_attr('Augassin')):
         if exp := p_exp(env):
             return ['augassin', op['value'][:-1], id1, exp]
-        raise SyntaxError("没有值可以赋")
+        raise SyntaxError("没有值可以赋" + error(index))
     index = c
     return
 
@@ -289,7 +295,7 @@ def p_import():
             argus = p_argus()
             if p_match('}') and p_match('from') and (where := p_string()):
                 return ['import', argus, where]
-            raise SyntaxError("不符合'import'语法")
+            raise SyntaxError("不符合'import'语法" + error(index))
         if (id1 := p_attr('Identity')) and p_match('from') and (where := p_string()):
             return ['import', id1, where]
         index = c
@@ -313,7 +319,7 @@ def p_func(env: Env):
             func = f"{id1['value']}@{env.label}"
             if p_match(')') and (bk := Block(env)):
                 return ['function', id1, argus, bk]
-        raise SyntaxError("不符合'function'语法")
+        raise SyntaxError("不符合'function'语法" + error(index))
     return
 
 
@@ -321,7 +327,7 @@ def p_else(env: Env):
     if p_match('else'):
         if bk := Block(env):
             return ['else', bk]
-        raise SyntaxError("'else'后未接语句块")
+        raise SyntaxError("'else'后未接语句块" + error(index))
     return
 
 
@@ -338,8 +344,8 @@ def p_elif(env: Env):
                 if not hasElse and (el := p_else(env)):
                     ret.append(el)
                 return ret, True
-            raise SyntaxError("'else if'后未接语句块")
-        raise SyntaxError("条件语句错误")
+            raise SyntaxError("'else if'后未接语句块" + error(index))
+        raise SyntaxError("条件语句错误" + error(index))
     index = c
     return None, None
 
@@ -355,8 +361,8 @@ def p_if(env: Env):
                 if not hasElse and (el := p_else(env)):
                     ret.append(el)
                 return ret
-            raise SyntaxError("'if'后未接语句块")
-        raise SyntaxError("条件语句错误")
+            raise SyntaxError("'if'后未接语句块" + error(index))
+        raise SyntaxError("条件语句错误" + error(index))
     return
 
 
@@ -373,18 +379,18 @@ def p_for(env: Env):
                 while p_match(',') and (cp2 := p_binaryOp(env)):
                     ret[2].append(cp2)
         else:
-            raise SyntaxError("缺少第一个';'")
+            raise SyntaxError("缺少第一个';'" + error(index))
         if p_match(';'):
             if stmt1 := p_stmt(env):
                 ret[3].append(stmt1)
                 while p_match(',') and (stmt2 := p_stmt(env)):
                     ret[3].append(stmt2)
         else:
-            raise SyntaxError("缺少第二个';'")
+            raise SyntaxError("缺少第二个';'" + error(index))
         if p_match(')') and (bk := Block(env)):
             ret.append(bk)
             return ret
-        raise SyntaxError("'for'后未接语句块")
+        raise SyntaxError("'for'后未接语句块" + error(index))
     return
 
 
@@ -393,8 +399,8 @@ def p_while(env: Env):
         if (cp := p_binaryOp(env)) and p_match(')'):
             if bk := Block(env):
                 return ['while', cp, bk]
-            raise SyntaxError("'while'后未接语句块")
-        raise SyntaxError("缺少条件判断语句")
+            raise SyntaxError("'while'后未接语句块" + error(index))
+        raise SyntaxError("缺少条件判断语句" + error(index))
     return
 
 
@@ -407,8 +413,8 @@ def p_comStmt(env: Env):
 
 def p_stmt(env: Env):
     return p_symStmt(env) or \
-        p_exp(env) or \
-        p_comStmt(env)
+        p_comStmt(env) or \
+        p_exp(env)
 
 
 class Block:
@@ -419,15 +425,15 @@ class Block:
             stmts.append(neo)
             while stmt := p_stmt(neo):
                 if isinstance(stmt, dict):
-                    raise SyntaxError(stmt, "该语句似乎没有任何作用?")
+                    raise SyntaxError("该语句似乎没有任何作用?" + error(index))
                 stmts.append(stmt)
                 p_match(';')
             if p_match('}'):
                 return stmts
-            raise SyntaxError("缺少'}'")
+            raise SyntaxError("缺少'}'" + error(index))
         if stmt := p_stmt(env):
             return [stmt]
-        raise SyntaxError("未匹配任何有效语法")
+        raise SyntaxError("未匹配任何有效语法" + error(index))
 
 
 def syntacticParser(path: str):
