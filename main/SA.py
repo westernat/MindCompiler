@@ -1,5 +1,5 @@
 from SP import Env, syntacticParser
-from LIB import *
+from LB import *
 from pprint import pprint
 
 
