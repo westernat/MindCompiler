@@ -234,8 +234,8 @@ def a_import(env: Env, ls: list, toSave: list):
     if (ls[0] == 'import'):
         for argu in ls[1]:
             ID = argu['value']
-            if module_env.get(ID+":export"):
-                imports[ID] = module_env.label
+            if env_label := module_env.get(ID+":export"):
+                imports[ID] = env_label
     else: # == 'import *'
         # 这个得tmd写a_attrRef()
         pass
