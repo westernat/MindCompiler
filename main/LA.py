@@ -1,4 +1,4 @@
-import re
+from tool import isNumber
 
 
 WORDS = {
@@ -137,8 +137,6 @@ def lexicalAnalyzer(input: str):
                 words[-1]['literal'] += ' '
             else:
                 words.extend([wordBase(' '), wordBase()])
-        elif char.isnumeric() and lchar in '+-':
-            words[-2]['literal'] += char
         elif char in '+-*/%<>!=()[]{},.?&|^~:;`"\'\n':
             if char == '=' and lchar in '+-*/%<>!=&|^':
                 words[-2]['literal'] += '='
@@ -187,7 +185,7 @@ def lexicalAnalyzer(input: str):
             continue
         elif literal in '`"\'' or literal.isspace():
             pass
-        elif re.match('^(\-|\+)?[0-9][0-9]*(.[0-9]*)?$', literal):
+        elif isNumber(literal):
             lineTokens.append(tokenBase('Number', word))
         else:
             literal = literal.strip()

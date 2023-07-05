@@ -1,10 +1,10 @@
 from SP import Env, syntacticParser
-from LB import *
+from tool import *
 from pprint import pprint
 from sys import argv
 from os import path
 
-DEBUG = False
+DEBUG = True
 
 
 def a_labelGener():
@@ -295,7 +295,7 @@ def a_exp(env: Env, ls: list | dict, toSave: list, label='', th=0) -> str:
             case '+' | '-' | '*' | '/' | '%' | '&' | '|' | '^' | '&&' | '||' | '<<' | '>>':
                 l = a_exp(env, ls[1], toSave, label)
                 r = a_exp(env, ls[2], toSave, label)
-                if l.isnumeric() and r.isnumeric():
+                if isNumber(l) and isNumber(r):
                     return str(eval(l+ls[0]+r))
                 else:
                     toSave.append(m_operation(
@@ -304,8 +304,8 @@ def a_exp(env: Env, ls: list | dict, toSave: list, label='', th=0) -> str:
                 op = ls[1]
                 r = a_exp(env, ls[2], toSave)
                 if op in '+-':
-                    if r.isnumeric():
-                        return eval(op+r)
+                    if isNumber(r):
+                        return op+r
                     toSave.append(m_operation(
                         Identity(label), 'mul', r, op+'1'))
                 else:

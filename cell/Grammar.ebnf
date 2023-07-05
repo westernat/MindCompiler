@@ -12,9 +12,9 @@ statement =
 expression =
     | ternaryOp
     | merge
-    | lambda_def    √
-    | binaryOp      √
-    | attribute_ref √
+    | lambda_def
+    | binaryOp
+    | attribute_ref
 ;
 merge = expression, '??', expression;
 
@@ -38,8 +38,10 @@ atom =
     | call
     | ε
 ;
-attribute_ref = primaty, '.', atom;
-
+attribute_ref =
+    | primaty, '.', expression
+    | '[', string, ']'
+;
 number = ? 数字 ?;
 
 identity = ? 标识符 ?;
@@ -122,9 +124,9 @@ return_stmt =
 ;
 import_stmt =
     | 'import', '*', 'as', Identifier, 'from', string
-    | 'import', '{', identity, (',', identity)*, '}', 'from', string
+    | 'import', '{', [arguments], '}', 'from', string
 ;
-export_stmt = 'export', '{', identity, (',', identity)*, '}';
+export_stmt = 'export', '{', [arguments], '}';
 
 delete_stmt = 'delete', expression;
 

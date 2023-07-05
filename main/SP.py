@@ -50,9 +50,9 @@ def p_match(input: str):
     return
 
 
-def p_next(input: str):
+def p_next(input: str, offset: int = 1):
     global index
-    if (index+1) < len(tokens) and input == tokens[index+1]['value']:
+    if (index+offset) < len(tokens) and input == tokens[index+offset]['value']:
         return input
     return
 
@@ -157,51 +157,52 @@ def p_primary(env: Env):
 
 
 def p_power(env: Env):
-    l = p_primary(env)
-    if p_match('**'):
-        return ['power', l, p_factor(env)]
-    return l
+    cache = p_primary(env)
+    while p_match('**'):
+        cache = ['power', cache, p_primary(env)]
+    return cache
 
 
 def p_factor(env: Env):
-    if op := (p_match('+') or p_match('-') or p_match('~')):
-        return ['factor', op, p_power(env)]
-    return p_power(env)
+    cache = p_power(env)
+    while op := (p_match('+') or p_match('-') or p_match('~')):
+        cache = [op, cache, p_power(env)]
+    return cache
 
 
 def p_term(env: Env):
-    l = p_factor(env)
-    if op := p_attr('TermOp'):
-        return [op['value'], l, p_term(env)]
-    return l
+    cache = p_factor(env)
+    while op := p_attr('TermOp'):
+        cache = [op['value'], cache, p_factor(env)]
+    return cache
 
 
 def p_sum(env: Env):
-    l = p_term(env)
-    if op1 := (p_match('+') or p_match('-')):
-        return [op1, l, p_sum(env)]
-    return l
+    cache = p_term(env)
+    while op := (p_match('+') or p_match('-')):
+        cache = [op, cache, p_term(env)]
+    return cache
 
 
 def p_shiftOp(env: Env):
-    l = p_sum(env)
-    if op := p_attr('ShiftOp'):
-        return [op['value'], l, p_sum(env)]
-    return l
+    cache = p_sum(env)
+    while op := p_attr('ShiftOp'):
+        cache = [op['value'], cache, p_sum(env)]
+    return cache
 
 
 def p_bitOp(env: Env):
-    l = p_shiftOp(env)
-    if op := p_attr('BitOp'):
-        return [op['value'], l, p_shiftOp(env)]
-    return l
+    cache = p_shiftOp(env)
+    while op := p_attr('BitOp'):
+        cache = [op['value'], cache, p_shiftOp(env)]
+    return cache
 
 
 def p_compareOp(env: Env):
-    l = p_bitOp(env)
-    if op := p_attr('CompareOp'):
-        return [op['value'], l, p_bitOp(env)]
-    return l
+    cache = p_bitOp(env)
+    while op := p_attr('CompareOp'):
+        cache = [op['value'], cache, p_bitOp(env)]
+    return cache
 
 
 def p_inversion(env: Env):
@@ -211,20 +212,20 @@ def p_inversion(env: Env):
 
 
 def p_binaryOp(env: Env):
-    l = p_inversion(env)
-    if op := p_attr('BinaryOp'):
-        return [op['value'], l, p_binaryOp(env)]
-    return l
+    cache = p_inversion(env)
+    while op := p_attr('BinaryOp'):
+        cache = [op['value'], cache, p_inversion(env)]
+    return cache
 
 
 def p_attrRef(env: Env):
     global index
     c = index
-    if (atom := p_atom(env)):
+    if (pri := p_primary(env)):
         if p_match('.'):
-            return ['ref:dot', atom, p_exp(env)]
+            return ['ref:dot', pri, p_exp(env)]
         if p_match('[') and (str1 := p_string()) and p_match(']'):
-            return ['ref:sub', atom, str1]
+            return ['ref:sub', pri, str1]
     index = c
     return
 
@@ -261,11 +262,12 @@ def p_exp(env: Env):
 def p_assign(env: Env):
     global index
     c = index
-    if p_match('let'):
-        if (id1 := p_attr('Identity')) and p_match('='):
+    if p_match('let') and (id1 := p_attr('Identity')) and p_match('='):
+        if lbd := p_lambda(env):
             funcQueue.append(f"{id1['value']}@{env.label}")
-            if lbd := p_lambda(env):
-                return ['assign', id1, lbd]
+            return ['assign', id1, lbd]
+        elif exp := (p_attrRef(env) or p_binaryOp(env)):
+            return ['assign', id1, exp]
         raise SyntaxError("你要'let'什么" + error(index))
     if (id1 := p_attr('Identity')) and p_match('='):
         if stmt := p_stmt(env):

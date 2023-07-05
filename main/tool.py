@@ -1,9 +1,10 @@
 from enum import Enum
+import re
 
 
 class Identity:
     def __init__(self, value: str):
-        self.value = f'@{value}'
+        self.value = value
 
 
 class Block:
@@ -310,3 +311,6 @@ Builtins = {
     'uradar',
     'ulocate'
 }
+
+def isNumber(literal: str):
+    return re.match('^[-+]?[0-9]+(.[0-9]+)?$', literal)
