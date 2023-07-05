@@ -1,5 +1,6 @@
 from enum import Enum
 import re
+from os import path
 
 
 class Identity:
@@ -312,5 +313,22 @@ Builtins = {
     'ulocate'
 }
 
+
+DEBUG = True
+PROJECT_ROOT = path.split(path.split(__file__)[0])[0]
+TEST_DIR = path.join(PROJECT_ROOT, 'test/')
+TEST_FILE = path.join(TEST_DIR, 'main.js')
+
+
 def isNumber(literal: str):
     return re.match('^[-+]?[0-9]+(.[0-9]+)?$', literal)
+
+
+def labelGener(prefix: str):
+    counter = 0
+    while True:
+        yield f'{prefix}{counter}'
+        counter += 1
+
+def t_link():
+    pass

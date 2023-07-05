@@ -163,10 +163,10 @@ def lexicalAnalyzer(input: str):
                 words[-2]['literal'] += char
             elif char == '>' and lchar == '=':
                 words[-2]['literal'] += char
-            elif char == '\n':
-                row += 1
-                column = 0
             else:
+                if char == '\n':
+                    row += 1
+                    column = 0
                 words.extend([wordBase(char), wordBase()])
         else:
             words[-1] = wordBase(words[-1]['literal'] + char)
