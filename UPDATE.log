@@ -8,3 +8,5 @@
            删除 test.js, 新增 test 文件夹以便进行 import, export 测试, 由此修改了相关路径
            新增 import, export 功能, 修改了 SA.py, SP.py
            于 .gitignore 拒绝 .vscode/ 文件夹上传
+[23-07-05] 修复了不允许的二义性: 四则运算的运算顺序错误
+           优化了代码生成: 常量运算以及替换

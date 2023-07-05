@@ -50,9 +50,9 @@ def p_match(input: str):
     return
 
 
-def p_next(input: str, offset: int = 1):
+def p_next(input: str):
     global index
-    if (index+offset) < len(tokens) and input == tokens[index+offset]['value']:
+    if (index+1) < len(tokens) and input == tokens[index+1]['value']:
         return input
     return
 
