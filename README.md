@@ -6,4 +6,4 @@
 
 python版本3.10
 
-使用方法：python Compiler.py test.js
+使用方法: python ./main/Compiler.py ./test/main.js
