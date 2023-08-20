@@ -141,8 +141,8 @@ def p_kvpair():
         raise SyntaxError("键值对错误" + error(index))
     if (id1 := p_attr('Identity')) and p_match('('):
         argus = p_argus()
-        if p_match(')') and (bk := Block(prev_env)):
-            return ['function', id1, argus, bk]
+        if p_match(')') and (block := Block(prev_env)):
+            return ['function', id1, argus, block]
     index = c
     return
 
@@ -156,7 +156,7 @@ def p_primary():
 def p_power():
     cache = p_primary()
     while p_match('**'):
-        cache = ['power', cache, p_primary()]
+        cache = ['**', cache, p_primary()]
     return cache
 
 
@@ -232,21 +232,21 @@ def p_lambda():
     c = index
     if p_match('function') and p_match('('):
         argus = p_argus()
-        if p_match(')') and (bk := Block(prev_env)):
-            return ['lambda', argus, bk]
+        if p_match(')') and (block := Block(prev_env)):
+            return ['lambda', argus, block]
         raise SyntaxError("不符合'lambda'函数的语法" + error(index))
     if p_match('('):
         argus = p_argus()
         if p_match(')') and p_match('=>'):
-            if bk := Block(prev_env):
-                return ['lambda', argus, bk]
+            if block := Block(prev_env):
+                return ['lambda', argus, block]
             raise SyntaxError("'=>'后缺少语句块" + error(index))
     index = c
     if p_next('=>'):
         if id1 := p_attr('Identity'):
             index += 1
-            if bk := Block(prev_env):
-                return ['lambda', id1, bk]
+            if block := Block(prev_env):
+                return ['lambda', id1, block]
             raise SyntaxError("'=>'后缺少语句块" + error(index))
         raise SyntaxError("'=>'前不是标识符" + error(index))
     return
@@ -319,16 +319,16 @@ def p_func():
         if (id1 := p_attr('Identity')) and p_match('('):
             argus = p_argus()
             funcQueue.append(f"{id1['value']}@{prev_env.label}")
-            if p_match(')') and (bk := Block(prev_env)):
-                return ['function', id1, argus, bk]
+            if p_match(')') and (block := Block(prev_env)):
+                return ['function', id1, argus, block]
         raise SyntaxError("不符合'function'语法" + error(index))
     return
 
 
 def p_else():
     if p_match('else'):
-        if bk := Block(prev_env):
-            return ['else', bk]
+        if block := Block(prev_env):
+            return ['else', block]
         raise SyntaxError("'else'后未接语句块" + error(index))
     return
 
@@ -337,29 +337,29 @@ def p_elif():
     global index
     c = index
     if p_match('else') and p_match('if') and p_match('('):
-        if (cp := p_binaryOp()) and p_match(')'):
-            if bk := Block(prev_env):
-                ret = ['elif', cp, bk]
-                ef, hasElse = p_elif()
-                if ef:
-                    ret.append(ef)
+        if (compare := p_binaryOp()) and p_match(')'):
+            if block := Block(prev_env):
+                ret = ['elif', block, compare]
+                elif_block, hasElse = p_elif()
+                if elif_block:
+                    ret.append(elif_block)
                 if not hasElse and (el := p_else()):
                     ret.append(el)
                 return ret, True
             raise SyntaxError("'else if'后未接语句块" + error(index))
         raise SyntaxError("条件语句错误" + error(index))
     index = c
-    return None, None
+    return None, False
 
 
 def p_if():
     if p_match('if') and p_match('('):
-        if (cp := p_binaryOp()) and p_match(')'):
-            if bk := Block(prev_env):
-                ret = ['if', cp, bk]
-                ef, hasElse = p_elif()
-                if ef:
-                    ret.append(ef)
+        if (compare := p_binaryOp()) and p_match(')'):
+            if block := Block(prev_env):
+                ret = ['if', block, compare]
+                elif_block, hasElse = p_elif()
+                if elif_block:
+                    ret.append(elif_block)
                 if not hasElse and (el := p_else()):
                     ret.append(el)
                 return ret
@@ -376,10 +376,10 @@ def p_for():
             while p_match(',') and (ag2 := p_assign()):
                 ret[1].append(ag2)
         if p_match(';'):
-            if cp1 := p_binaryOp():
-                ret[2].append(cp1)
-                while p_match(',') and (cp2 := p_binaryOp()):
-                    ret[2].append(cp2)
+            if compare1 := p_binaryOp():
+                ret[2].append(compare1)
+                while p_match(',') and (compare2 := p_binaryOp()):
+                    ret[2].append(compare2)
         else:
             raise SyntaxError("缺少第一个';'" + error(index))
         if p_match(';'):
@@ -389,8 +389,8 @@ def p_for():
                     ret[3].append(stmt2)
         else:
             raise SyntaxError("缺少第二个';'" + error(index))
-        if p_match(')') and (bk := Block(prev_env)):
-            ret.append(bk)
+        if p_match(')') and (block := Block(prev_env)):
+            ret.append(block)
             return ret
         raise SyntaxError("'for'后未接语句块" + error(index))
     return
@@ -398,9 +398,9 @@ def p_for():
 
 def p_while():
     if p_match('while') and p_match('('):
-        if (cp := p_binaryOp()) and p_match(')'):
-            if bk := Block(prev_env):
-                return ['while', cp, bk]
+        if (compare := p_binaryOp()) and p_match(')'):
+            if block := Block(prev_env):
+                return ['while', compare, block]
             raise SyntaxError("'while'后未接语句块" + error(index))
         raise SyntaxError("缺少条件判断语句" + error(index))
     return

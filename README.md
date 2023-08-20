@@ -4,6 +4,7 @@
 
 将ECMAScript编译为Mindustry逻辑语言的简陋编译器
 
-python版本3.10
+`python`版本3.10+
 
-使用方法: python ./main/Compiler.py ./test/main.js
+## 使用方法:
+./Compiler \<file-path\>

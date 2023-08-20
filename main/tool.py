@@ -1,334 +1,177 @@
-from enum import Enum
 import re
 from os import path
-
-
-class Identity:
-    def __init__(self, value: str):
-        self.value = value
-
-
-class Block:
-    def __init__(self, value: str):
-        self.value = f'@{value}'
-
-
-class Unit:
-    def __init__(self, value: str):
-        self.value = f'@{value}'
-
-
-class Item:
-    def __init__(self, value: str):
-        self.value = f'@{value}'
-
-
-class Liquid:
-    def __init__(self, value: str):
-        self.value = f'@{value}'
-
-
-class DrawMode(Enum):
-    Clear = 'clear'
-    Color = 'color'
-    Col = 'col'
-    Stroke = 'stroke'
-    Line = 'line'
-    Rect = 'rect'
-    LineRect = 'lineRect'
-    Poly = 'poly'
-    LinePoly = 'linePoly'
-    Triangle = 'triangle'
-    Image = 'image'
-
-
-class ControlSet(Enum):
-    Enabled = 'enabled'
-    Shoot = 'shoot'
-    Shootp = 'shootp'
-    Config = 'config'
-    Color = 'color'
-
-
-class RadarTarget(Enum):
-    Any = 'any'
-    Enemy = 'enemy'
-    Ally = 'ally'
-    Player = 'player'
-    Attacker = 'attacker'
-    Flying = 'flying'
-    Boss = 'boss'
-    Ground = 'ground'
-
-
-class RadarOrder(Enum):
-    _1 = '1'
-    _True = '1'
-    _0 = '0'
-    _False = '0'
-
-
-class RadarSort(Enum):
-    Distance = 'distance'
-    Health = 'health'
-    Shield = 'shield'
-    Armor = 'armor'
-    MaxHealth = 'maxhealth'
-
-
-class SensorAttr(Enum):
-    TotalItems = 'totalItems'
-    FirstItem = 'firstItem'
-    TotalLiquids = 'totalLiquids'
-    TotalPower = 'totalPower'
-    ItemCapacity = 'itemCapacity'
-    LiquidCapacity = 'liquidCapacity'
-    PowerCapacity = 'powerCapacity'
-    PowerNetStored = 'powerNetStored'
-    PowerNetCapacity = 'powerNetCapacity'
-    PowerNetIn = 'powerNetIn'
-    PowerNetOut = 'powerNetOut'
-    Ammo = 'ammo'
-    AmmoCapacity = 'ammocapacity'
-    Health = 'health'
-    MaxHealth = 'maxHealth'
-    Heat = 'heat'
-    Efficiency = 'efficiency'
-    Progress = 'progress'
-    Timescale = 'timescale'
-    Rotation = 'rotation'
-    X = 'x'
-    Y = 'y'
-    ShootX = 'shootX'
-    ShootY = 'shootY'
-    Size = 'size'
-    Dead = 'dead'
-    Range = 'range'
-    Shooting = 'shooting'
-    Boosting = 'boosting'
-    MineX = 'mineX'
-    MineY = 'mineY'
-    Mining = 'mining'
-    Speed = 'speed'
-    Team = 'team'
-    Type = 'type'
-    Flag = 'flag'
-    Controlled = 'controlled'
-    Controller = 'controller'
-    Name = 'name'
-    PayloadCount = 'payloadCount'
-    PayloadType = 'payloadType'
-    Enabled = 'enabled'
-    Config = 'config'
-    Color = 'color'
+from pprint import pprint
 
 
 OperationMode = {
-    '+': 'add',
-    '-': 'sub',
-    '*': 'mul',
-    '/': 'div',
-    '%': 'mod',
-    '&': 'and',
-    '|': 'or',
-    '!': 'not',
-    '^': 'xor',
-    '&&': 'land',
-    '||': 'or'
+    "+": "add",
+    "-": "sub",
+    "*": "mul",
+    "/": "div",
+    "%": "mod",
+    "&": "and",
+    "|": "or",
+    "!": "not",
+    "^": "xor",
+    "&&": "land",
+    "||": "or",
+    "**": "pow",
+    "<<": "shl",
+    ">>": "shr"
 }
-
-
-class LookupMode(Enum):
-    Block = 'block'
-    Unit = 'unit'
-    Item = 'item'
-    Liquid = 'liquid'
 
 
 JumpMode = {
-    'true': 'allways',
-    '>': 'greaterThan',
-    '>=': 'greaterThanEq',
-    '<': 'lessThan',
-    '<=': 'lessThanEq',
-    '==': 'equal',
-    # '===': 'strictEqual',
-    '!=': 'notEqual',
-    'f>': 'lessThanEq',
-    'f>=': 'lessThan',
-    'f<': 'greaterThanEq',
-    'f<=': 'greaterThan',
-    'f==': 'notEqual',
-    'f!=': 'equal'
+    "true": "allways",
+    ">": "greaterThan",
+    ">=": "greaterThanEq",
+    "<": "lessThan",
+    "<=": "lessThanEq",
+    "==": "equal",
+    #   '===': 'strictEqual',
+    "!=": "notEqual",
+    "f>": "lessThanEq",
+    "f>=": "lessThan",
+    "f<": "greaterThanEq",
+    "f<=": "greaterThan",
+    "f==": "notEqual",
+    "f!=": "equal",
 }
 
 
-class UnitCtrlMode(Enum):
-    Idle = 'idle'
-    Stop = 'stop'
-    Move = 'move'
-    Approach = 'Approach'
-    Boost = 'boost'
-    RadarTarget = 'target'
-    RadarTargetp = 'targetp'
-    ItemDrop = 'itemDrop'
-    ItemTake = 'itemTake'
-    PayDrop = 'payDrop'
-    PayTake = 'paytake'
-    PayEnter = 'payEnter'
-    Mine = 'mine'
-    Flag = 'flag'
-    Build = 'build'
-    GetBlock = 'getBlock'
-    Within = 'within'
-    Unbind = 'unbind'
+def m_read(result, _from, at):
+    return f"read {result} {_from} {at}"
 
 
-class UnitLocFind(Enum):
-    Ore = 'ore'
-    Building = 'building'
-    Spawn = 'spawn'
-    Damaged = 'damaged'
+def m_write(result, to, at):
+    return f"write {result} {to} {at}"
 
 
-class UnitLocGroup(Enum):
-    Core = 'core'
-    Storage = 'storage'
-    Generator = 'generator'
-    Turret = 'turret'
-    Factory = 'factory'
-    Repair = 'repair'
-    Battery = 'battery'
-    Reactor = 'reactor'
+def m_draw(mode, a, b, c, d, e, f):
+    return f"draw {mode} {a} {b} {c} {d} {e} {f}"
 
 
-def m_read(result=Identity('result'), _from=Block('cell1'), at='0'):
-    return f'read {result.value} {_from.value} {at}'
+def m_print(msg):
+    return f"print {msg}"
 
 
-def m_write(result=Identity('result'), to=Block('cell1'), at='0'):
-    return f'write {result.value} {to.value} {at}'
+def m_drawflush(to):
+    return f"drawflush {to}"
 
 
-def m_draw(mode=DrawMode.Clear, a='0', b='0', c='0', d='0', e='0', f='0'):
-    return f'draw {mode.value} {a} {b} {c} {d} {e} {f}'
+def m_printflush(to):
+    return f"printflush {to}"
 
 
-def m_print(msg="frog"):
-    return f'print {msg}'
+def m_getlink(result, link):
+    return f"getlink {result} {link}"
 
 
-def m_drawflush(to=Block('display1')):
-    return f'drawflush {to.value}'
+def m_control(_set, of, a, b, c, d):
+    return f"control {_set} {of} {a} {b} {c} {d}"
 
 
-def m_printflush(to=Block('message1')):
-    return f'printflush {to.value}'
+def m_radar(_from, target1, target2, target3, order, sort, output):
+    return f"radar {target1} {target2} {target3} {order} {_from} {sort} {output}"
 
 
-def m_getlink(result=Identity('result'), link='0'):
-    return f'getlink {result.value} {link}'
+def m_sensor(result, of, at):
+    return f"sensor {result} {at} {of}"
 
 
-def m_control(_set=ControlSet.Enabled, of=Block('block1'), a='0', b='0', c='0', d='0'):
-    return f'control {_set.value} {of.value} {a} {b} {c} {d}'
+def m_set(result, value):
+    return f"set {result} {value}"
 
 
-def m_radar(_from: Block = Block('turret1'), target1=RadarTarget.Enemy, target2=RadarTarget.Any, target3=RadarTarget.Any, order=RadarOrder._1, sort=RadarSort.Distance, output=Identity('output')):
-    return f'radar {target1.value} {target2.value} {target3.value} {order.value} {_from.value} {sort.value} {output.value}'
+def m_operation(mode, result, a, b="0"):
+    return f"op {mode} {result} {a} {b}"
 
 
-def m_sensor(result=Identity('result'), of: Item | Liquid | SensorAttr = Item('@copper'), at=Block('block1')):
-    return f'sensor {result.value} {at.value} {of.value}'
+def m_lookup(result, mode, id):
+    return f"lookup {mode} {result} {id}"
 
 
-def m_set(result=Identity('result'), value='0'):
-    return f'set {result.value} {value}'
+def m_packcolor(result, r, g, b, a):
+    return f"packcolor {result} {r} {g} {b} {a}"
 
 
-def m_operation(result=Identity('result'), mode=OperationMode['+'], a='a', b='b'):
-    return f'op {mode} {result.value} {a} {b}'
-
-
-def m_lookup(result=Identity('result'), mode=LookupMode.Item, id='0'):
-    return f'lookup {mode.value} {result.value} {id}'
-
-
-def m_packcolor(result=Identity('result'), r='1', g='0', b='0', a='1'):
-    return f'packcolor {result.value} {r} {g} {b} {a}'
-
-
-def m_wait(delay='0.5'):
-    return f'wait {delay}'
+def m_wait(delay):
+    return f"wait {delay}"
 
 
 def m_stop():
-    return 'stop'
+    return "stop"
 
 
 def m_end():
-    return 'end'
+    return "end"
 
 
-def m_jump(goto: int | str, mode=JumpMode['true'], left='x', right='0'):
-    if mode == 'allways':
-        return f'set @counter {goto}'
-    return f'jump {goto} {mode} {left} {right}'
+def m_jump(goto, mode, left, right):
+    finalMode = JumpMode[mode]
+    if finalMode == "allways":
+        return f"set @counter {goto}"
+    return f"jump {goto} {finalMode} {left} {right}"
 
 
-def m_ubind(type=Unit('poly')):
-    return f'ubind {type.value}'
+def m_ubind(type):
+    return f"ubind {type}"
 
 
-def m_ucontrol(mode=UnitCtrlMode.Move, a='0', b='0', c='0', d='0', e='0'):
-    return f'ucontrol {mode.value} {a} {b} {c} {d} {e}'
+def m_ucontrol(mode, a, b, c, d, e):
+    return f"ucontrol {mode} {a} {b} {c} {d} {e}"
 
 
-def m_uradar(target1=RadarTarget.Enemy, target2=RadarTarget.Any, target3=RadarTarget.Any, order=RadarOrder._1, sort=RadarSort.Distance, result=Identity('result')):
-    return f'uradar {target1.value} {target2.value} {target3.value} {sort.value} 0 {order.value} {result.value}'
+def m_uradar(target1, target2, target3, order, sort, result):
+    return f"uradar {target1} {target2} {target3} {sort} 0 {order} {result}"
 
 
-def m_ulocate(find=UnitLocFind.Building, *, group=UnitLocGroup.Core, enemy='1', ore=Item('@copper'), outX='outx', outY='outy', found='found', building=Block('building')):
-    return f'ulocate {find.value} {group.value} {enemy} {ore.value} {outX} {outY} {found} {building.value}'
+def m_ulocate(find, *, group, enemy, ore, outX="outx", outY, found, building):
+    return f"ulocate {find} {group} {enemy} {ore} {outX} {outY} {found} {building}"
 
 
 Builtins = {
-    'read',
-    'write',
-    'draw',
-    'print',
-    'drawflush',
-    'printflush',
-    'getlink',
-    'control',
-    'radar',
-    'sensor',
-    'lookup',
-    'packcolor',
-    'wait',
-    'stop',
-    'ubind',
-    'ucontrol',
-    'uradar',
-    'ulocate'
+    "read",
+    "write",
+    "draw",
+    "print",
+    "drawflush",
+    "printflush",
+    "getlink",
+    "control",
+    "radar",
+    "sensor",
+    "lookup",
+    "packcolor",
+    "wait",
+    "stop",
+    "ubind",
+    "ucontrol",
+    "uradar",
+    "ulocate",
 }
 
 
 DEBUG = True
 PROJECT_ROOT = path.split(path.split(__file__)[0])[0]
-TEST_DIR = path.join(PROJECT_ROOT, 'test/')
-TEST_FILE = path.join(TEST_DIR, 'main.js')
+TEST_DIR = path.join(PROJECT_ROOT, "test/")
 
 
 def isNumber(literal: str):
-    return re.match('^[-+]?[0-9]+(.[0-9]+)?$', literal)
+    return re.match("^[-+]?[0-9]+(.[0-9]+)?$", literal)
 
 
 def labelGener(prefix: str):
     counter = 0
     while True:
-        yield f'{prefix}{counter}'
+        yield f"{prefix}{counter}"
         counter += 1
 
-def t_link():
-    pass
+
+def console(obj: object, label=""):
+    if DEBUG:
+        if label == "":
+            print(obj)
+        else:
+            print(label.center(20, "="))
+            pprint(obj)
