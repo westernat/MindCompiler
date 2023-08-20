@@ -39,7 +39,7 @@ def optimizing(files: dict[str, dict[str, list[list[str] | str]]]):
 if __name__ == "__main__":
     start = time()
     if len(argv) == 1:
-        optimizing(sematicAnalyzer(path.join(TEST_DIR, "for-test.js")))
+        optimizing(sematicAnalyzer(path.join(TEST_DIR, "let-test.js")))
     else:
         optimizing(sematicAnalyzer(argv[1]))
     stop = time()
