@@ -24,8 +24,6 @@ def a_stmts(env: Env, ls: list, toSave: list):
         match stmt[0]:
             case "assign":
                 a_assgin(env, stmt, toSave)
-            case "augassin":
-                a_augassin(env, stmt, toSave)
             case "for":
                 a_for(env, stmt, toSave)
             case "function":
@@ -56,17 +54,6 @@ def a_assgin(env: Env, ls: list, toSave: list):
         if exp != label:
             toSave.append(["m_set", label, exp])
     return label
-
-
-def a_augassin(env: Env, ls: list, toSave: list):
-    ID = ls[2]["value"]
-    if envLabel := env.get(ID):
-        label = f"{ID}@{envLabel}"
-        exp = a_exp(env, ls[1:], toSave, label)
-        if exp != label:
-            toSave.append(["m_set", label, exp])
-    else:
-        raise NameError(f"变量名'{ID}'未定义")
 
 
 def a_compare(
