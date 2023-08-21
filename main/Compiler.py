@@ -1,46 +1,33 @@
-from SA import sematicAnalyzer
-from time import time
 from sys import argv
 from tool import *
-
-
-def optimizing(files: dict[str, dict[str, list[list[str] | str]]]):
-    def link_helper(links: list[list[str] | str]):
-        table = []
-        for link in links:
-            if isinstance(link, list) and link[0].startswith("m_"):
-                linked = []
-                for index in range(len(link)):
-                    atom = link[index]
-                    if atom.startswith("$l") and (to_link := file.get(atom)):
-                        linked = link_helper(to_link)
-                        link[index] = str(len(table) + len(linked) + 1)
-                table.append(eval(f"{link[0]}{tuple(link[1:])}"))
-                table.extend(linked)
-        return table
-
-    linked_table = []
-    console(files, "unlinked")
-    for file_name in files:
-        file = files[file_name]
-        linked_table.append(link_helper(file["$l0"]))
-
-    # 最终拼接
-    final_list = []
-    for linked in linked_table:
-        final_list.extend(linked)
-
-    print("mdtlog".center(20, "="))
-    for line in final_list:
-        print(line)
-    print("printflush message1")
+from SA import sematicAnalyzer
 
 
 if __name__ == "__main__":
-    start = time()
-    if len(argv) == 1:
-        optimizing(sematicAnalyzer(path.join(TEST_DIR, "let-test.js")))
+    length = len(argv)
+    if length == 1:
+        print("缺少选项与文件路径!")
+        couldUse()
     else:
-        optimizing(sematicAnalyzer(argv[1]))
-    stop = time()
-    print("\n程序用时", stop - start, "s")
+        opt = argv[1]
+        if opt.startswith("-"):
+            match opt:
+                case "-t" | "--test":
+                    if length == 3:
+                        if argv[2] in ("-a", "--all"):
+                            for file_name in listdir(TEST_DIR):
+                                print(file_name.center(40, "@"))
+                                optimizing(sematicAnalyzer(path.join(TEST_DIR, file_name)))
+                        else:
+                            optimizing(sematicAnalyzer(path.join(TEST_DIR, argv[2])))
+                    else:
+                        couldUse()
+                case "-c" | "--compile":
+                    if length == 3:
+                        optimizing(sematicAnalyzer(argv[2]))
+                    else:
+                        print("缺少文件路径!")
+                        couldUse()
+        else:
+            print("缺少选项!")
+            print(HELP)

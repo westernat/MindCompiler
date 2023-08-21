@@ -7,4 +7,7 @@
 `python`版本3.10+
 
 ## 使用方法:
-./Compiler \<file-path\>
+- 对于`Windows`用户:
+  - 如果你使用Command Prompt, 你应该运行 Compiler \<option\> \<file-path\>
+  - 如果你使用Power Shell, 你应该运行 ./Compiler \<option\> \<file-path\>
+- 对于`Linux`用户, 你应该运行 ./Compiler \<option\> \<file-path\>

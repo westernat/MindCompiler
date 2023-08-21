@@ -3,17 +3,22 @@ from tool import labelGener, OperationMode, Builtins, TEST_DIR, isNumber, consol
 from sys import argv
 from os import path
 
-variableLabelGener = labelGener("v")
-linkLabelGener = labelGener("$l")
-blocks = {"main": {}}
-functions = {}
-imports = {}
+
+def init():
+    global helper
+    helper = {
+        "variableLabelGener": labelGener("v"),
+        "linkLabelGener": labelGener("$l"),
+        "blocks": {"main": {}},
+        "functions": {},
+        "imports": {},
+    }
 
 
 def a_block(stmts: list):
     env: Env = stmts[0]
-    label = next(linkLabelGener)
-    table = blocks[env.getTop()]
+    label = next(helper["linkLabelGener"])
+    table = helper["blocks"][env.getTop()]
     table[label] = []
     a_stmts(env, stmts[1:], table[label])
     return label
@@ -76,7 +81,7 @@ def a_compare(
     l = a_exp(env, ls[1], toSave)
     r = a_exp(env, ls[2], toSave)
     if valueMode:
-        label = next(variableLabelGener)
+        label = next(helper["variableLabelGener"])
         toSave.append(["m_operation", OP, label, l, r])
         return label
     else:
@@ -98,13 +103,13 @@ def a_for(env: Env, ls: list, toSave: list):
         compares = (
             a_compare(env, compare, toSave, valueMode=True) for compare in ls[2]
         )
-        label = next(variableLabelGener)
+        label = next(helper["variableLabelGener"])
         toSave.append(["m_set", label, "true"])
         for compare in compares:
             toSave.append(["m_operation", "land", label, label, compare])
         toSave.append(["m_jump", link_to, "!=", label, "false"])
 
-    links: list[list[str]] = blocks[env.getTop()][link_to]
+    links: list[list[str]] = helper["blocks"][env.getTop()][link_to]
     for express in ls[3]:
         a_exp(env, express, links)
     links.append(["m_set", "@counter", str(len(toSave) - 1)])
@@ -119,11 +124,11 @@ def a_call(env: Env, ls: list, toSave: list):
         neoLabel: str
         if env_label := env.get(ID):
             neoLabel = f"{ID}@{env_label}"
-        elif ID in imports:
-            neoLabel = f"{ID}@{imports[ID]}"
+        elif ID in helper["imports"]:
+            neoLabel = f"{ID}@{helper['imports'][ID]}"
         else:
             raise NameError(f"函数名'{ID}'未定义")
-        func = functions[neoLabel]
+        func = helper["functions"][neoLabel]
         for argu, para in zip(func["argus"], ls[2]):
             label = a_exp(env, para, toSave, argu)
             toSave.append(["m_set", argu, label])
@@ -142,7 +147,7 @@ def a_func(env: Env, ls: list, toSave: list):
         ls[3][0].put(argu["value"])
     ret = []
     a_block(ls[3])
-    functions[neoLabel] = {"pos": "label", "argus": argus, "at": env.getTop()}
+    helper["functions"][neoLabel] = {"pos": "label", "argus": argus, "at": env.getTop()}
     toSave.append(["m_set", "@counter", "label"])
     toSave.extend(ret)
     toSave.append(["m_set", "@counter", neoLabel + ":back"])
@@ -218,9 +223,9 @@ def a_import(env: Env, ls: list, toSave: list):
         TEST_DIR if len(argv) == 1 else path.split(argv[1])[0], moduleName
     )
     module_ast = syntacticParser(modulePath, Env(moduleName))
-    blocks[moduleName] = {}
-    table = blocks[moduleName]
-    label = next(linkLabelGener)
+    helper["blocks"][moduleName] = {}
+    table = helper["blocks"][moduleName]
+    label = next(helper["linkLabelGener"])
     table[label] = []
     a_block(module_ast)
     table[label].append("#" + env.getTop())
@@ -229,12 +234,12 @@ def a_import(env: Env, ls: list, toSave: list):
         for argu in ls[1]:
             ID = argu["value"]
             if env_label := module_env.get(ID + ":export"):
-                imports[ID] = env_label
+                helper["imports"][ID] = env_label
     else:  # == 'import *'
         # 这个得tmd写a_attrRef()
         pass
     console(module_ast, moduleName)
-    console(imports, "imports")
+    console(helper["imports"], "imports")
 
 
 def a_export(env: Env, ls: list, toSave: list):
@@ -272,7 +277,7 @@ def a_lambda(env: Env, ls: list, toSave: list, label: str):
         argus.append(f"{argu['value']}@{ls[2][0].label}")
         ls[2][0].put(argu["value"])
     a_block(ls[2])
-    functions[label] = {"pos": "label", "argus": argus}
+    helper["functions"][label] = {"pos": "label", "argus": argus}
     toSave.append(["m_set", "@counter", "label"])
     toSave.extend(ret)
     toSave.append(["m_set", "@counter", label + ":back"])
@@ -281,7 +286,7 @@ def a_lambda(env: Env, ls: list, toSave: list, label: str):
 def a_exp(env: Env, ls: list | dict, toSave: list, label="") -> str:
     if isinstance(ls, list):
         if label == "":
-            label = next(variableLabelGener)
+            label = next(helper["variableLabelGener"])
         id = ls[0]
         match id:
             case "+" | "-" | "*" | "/" | "%" | "&" | "|" | "^" | "&&" | "||" | "**" | "<<" | ">>":
@@ -328,8 +333,9 @@ def a_exp(env: Env, ls: list | dict, toSave: list, label="") -> str:
 
 
 def sematicAnalyzer(path: str):
+    init()
     AST = syntacticParser(path, Env("main"))
     a_block(AST)
     console(AST, "main AST")
-    console(functions, "functions")
-    return blocks
+    console(helper["functions"], "functions")
+    return helper["blocks"]

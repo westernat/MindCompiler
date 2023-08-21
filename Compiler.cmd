@@ -1,2 +1,2 @@
 @ECHO OFF
-python ./main/Compiler.py %1
+python ./main/Compiler.py %1 %2
