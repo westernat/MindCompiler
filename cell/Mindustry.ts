@@ -174,9 +174,7 @@ declare class MessageBlock extends Block {
      */
     readonly flush: string
     /**
-     * 
      * @param msg 需要打印的对象
-     * 
      * 把msg存于缓存
      */
     print(msg: any): void
@@ -396,7 +394,7 @@ declare function draw(mode: "color", R: number, G: number, B: number, A: number)
  * 
  * 为以%开头的十六进制代码形式。
  * 
- * 举例: %FF0000 为红色 */
+ * 举例: `%FF0000` 为红色 */
 declare function draw(mode: "col", RGB: string): void
 /**设置线条宽度 */
 declare function draw(mode: "stroke", width: number): void
@@ -414,7 +412,7 @@ declare function draw(mode: "linePoly", x: number, y: number, sides: number, rad
 declare function draw(mode: "triangle", x: number, y: number, x2: number, y2: number, x3: number, y3: number): void
 /**画出某个游戏内容的图像
  * 
- * 例如 @router 或者 @dagger */
+ * 例如 `@router` 或者 `@dagger` */
 declare function draw(mode: "image", x: number, y: number, image: string, size: number, rotation: number): void
 /**添加文字到打印缓存
  * 
@@ -448,7 +446,7 @@ declare function sensor(result: string, _with: string, _in: string): void
  * 
  * 各个分类中的项目总数
  * 
- * 是 @unitCount / @itemCount / @liquidCount / @blockCount */
+ * 是 `@unitCount` / `@itemCount` / `@liquidCount` / `@blockCount` */
 declare function lookup(result: string, mode: string, id: number): void
 /**将[0, 1]范围内的RGBA分量整合成单个数字
  * 
@@ -462,7 +460,7 @@ declare function stop(): void
  * 
  * 或者直接绑定指定单位
  * 
- * 并保存至 @unit */
+ * 并保存至 `@unit` */
 declare function ubind(type: string): void
 /**控制已绑定的单位 */
 declare function ucontrol(mode: string, kwargs: number[]): void
@@ -502,7 +500,7 @@ declare function ucontrol(mode: "build", x: number, y: number, block: number, ro
  * 
  * 坐标需要在单位的感知范围内
  * 
- * 无建筑的地面返回 @air ， 墙壁返回 @solid */
+ * 无建筑的地面返回 `@air`，墙壁返回 `@solid` */
 declare function ucontrol(mode: "getBlock", x: number, y: number, type: number, building: number, floor: number): void
 /**检查单位是否接近了某个位置 */
 declare function ucontrol(mode: "within", x: number, y: number, radius: number, result: number): void

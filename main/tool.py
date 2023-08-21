@@ -18,7 +18,7 @@ OperationMode = {
     "||": "or",
     "**": "pow",
     "<<": "shl",
-    ">>": "shr"
+    ">>": "shr",
 }
 
 
@@ -160,12 +160,7 @@ HELP = """使用方法: Compiler [option] [file-path]
 option:
     -t --test
     -c --compile"""
-
-
-def couldUse():
-    print("可用的测试文件:")
-    for file_name in listdir(TEST_DIR):
-        print("   ", file_name)
+COULD_USE = "可用的测试文件:\n" + "\n".join("    " + _ for _ in listdir(TEST_DIR))
 
 
 def isNumber(literal: str):
@@ -204,6 +199,7 @@ def optimizing(unlinked: dict[str, dict[str, list[list[str]]]]):
                 table.append(eval(f"{link[0]}{tuple(link[1:])}"))
                 table.extend(linked)
         return table
+
     # 单个模块内拼接
     linked_table = []
     console(unlinked, "unlinked")

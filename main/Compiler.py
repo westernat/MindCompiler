@@ -7,7 +7,8 @@ if __name__ == "__main__":
     length = len(argv)
     if length == 1:
         print("缺少选项与文件路径!")
-        couldUse()
+        print(HELP)
+        print(COULD_USE)
     else:
         opt = argv[1]
         if opt.startswith("-"):
@@ -21,13 +22,13 @@ if __name__ == "__main__":
                         else:
                             optimizing(sematicAnalyzer(path.join(TEST_DIR, argv[2])))
                     else:
-                        couldUse()
+                        print(COULD_USE)
                 case "-c" | "--compile":
                     if length == 3:
                         optimizing(sematicAnalyzer(argv[2]))
                     else:
                         print("缺少文件路径!")
-                        couldUse()
+                        print(COULD_USE)
         else:
             print("缺少选项!")
             print(HELP)
